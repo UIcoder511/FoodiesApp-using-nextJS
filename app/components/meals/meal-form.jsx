@@ -1,15 +1,16 @@
 "use client";
 
 import { storeMeal } from "@/apis/meals/mealsActions";
-import { useFormStatus } from "react-dom";
+import { useFormState } from "react-dom";
 import ImagePicker from "@/app/components/meals/image-picker";
 import classes from "./meal-form.module.css";
+import MealFormSubmit from "./meal-form-submit";
 
 export default function MealForm() {
-  const { pending, data, method, action } = useFormStatus();
+  const [state, action] = useFormState(storeMeal, { message: "" });
 
   return (
-    <form className={classes.form} action={storeMeal}>
+    <form className={classes.form} action={action}>
       <div className={classes.row}>
         <p>
           <label htmlFor="name">Your name</label>
@@ -38,8 +39,11 @@ export default function MealForm() {
         ></textarea>
       </p>
       <ImagePicker label="Image" name="image" />
+
+      {state.message && <p>{state.message}</p>}
+
       <p className={classes.actions}>
-        <button type="submit">Share Meal</button>
+        <MealFormSubmit />
       </p>
     </form>
   );

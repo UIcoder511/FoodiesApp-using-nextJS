@@ -5,7 +5,35 @@ import fs from "node:fs";
 import { redirect } from "next/navigation";
 import { storeMealInDb } from "./mealsCrud";
 
-export async function storeMeal(formData) {
+const validateFeild = (field) => {
+  if (field === "" || field.trim() === "") {
+    return false;
+  }
+  return true;
+};
+
+export async function storeMeal(prevState, formData) {
+  const meal = {
+    title: formData.get("title"),
+    summary: formData.get("summary"),
+
+    creator: formData.get("name"),
+    creator_email: formData.get("email"),
+  };
+
+  if (
+    !validateFeild(meal.title) ||
+    !validateFeild(meal.summary) ||
+    !validateFeild(meal.creator) ||
+    !validateFeild(meal.creator_email) ||
+    !validateFeild(formData.get("instructions")) ||
+    !validateFeild(formData.get("image"))
+  ) {
+    return {
+      message: "All fields are required",
+    };
+  }
+
   const slug = formData.get("title").toLowerCase().replace(/ /g, "-");
 
   const image = formData.get("image");
@@ -23,18 +51,11 @@ export async function storeMeal(formData) {
     }
   });
 
-  const meal = {
-    title: formData.get("title"),
-    summary: formData.get("summary"),
-    instructions: xss(formData.get("instructions")),
-    image: `/images/${fileName}`,
-    creator: formData.get("name"),
-    creator_email: formData.get("email"),
-    slug: slug,
-  };
-
-  // Save the meal to the database
-  await storeMealInDb(meal);
+  (meal.instructions = xss(formData.get("instructions"))),
+    (meal.image = `/images/${fileName}`),
+    (meal.slug = slug),
+    // Save the meal to the database
+    await storeMealInDb(meal);
 
   redirect(`/meals`);
 }

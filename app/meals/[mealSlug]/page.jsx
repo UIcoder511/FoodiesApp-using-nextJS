@@ -18,7 +18,10 @@ export default async function MealsSlugPage({ params }) {
     <>
       <header className={classes.header}>
         <div className={classes.image}>
-          <Image src={image} fill />
+          <Image
+            src={"https://foddies-app-nextjs.s3.amazonaws.com/" + image}
+            fill
+          />
         </div>
         <div className={classes.headerText}>
           <h1>{title}</h1>

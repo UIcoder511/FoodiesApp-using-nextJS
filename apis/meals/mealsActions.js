@@ -4,6 +4,12 @@ import xss from "xss";
 import fs from "node:fs";
 import { redirect } from "next/navigation";
 import { storeMealInDb } from "./mealsCrud";
+import { revalidatePath } from "next/cache";
+import { S3 } from "@aws-sdk/client-s3";
+
+const s3 = new S3({
+  region: "us-east-1",
+});
 
 const validateFeild = (field) => {
   if (field === "" || field.trim() === "") {
@@ -26,8 +32,8 @@ export async function storeMeal(prevState, formData) {
     !validateFeild(meal.summary) ||
     !validateFeild(meal.creator) ||
     !validateFeild(meal.creator_email) ||
-    !validateFeild(formData.get("instructions")) ||
-    !validateFeild(formData.get("image"))
+    !validateFeild(formData.get("instructions"))
+    // !validateFeild(formData.get("image"))
   ) {
     return {
       message: "All fields are required",
@@ -45,10 +51,19 @@ export async function storeMeal(prevState, formData) {
   const stream = fs.createWriteStream(`public/images/${fileName}`);
   const bufferedImage = await image.arrayBuffer();
 
-  stream.write(Buffer.from(bufferedImage), (err) => {
-    if (err) {
-      throw new Error("Failed to store image.");
-    }
+  //   stream.write(Buffer.from(bufferedImage), (err) => {
+  //     if (err) {
+  //       throw new Error("Failed to store image.");
+  //     }
+  //   });
+
+  s3.putObject({
+    Bucket: "foddies-app-nextjs",
+    Key: "images/" + fileName,
+
+    Body: Buffer.from(bufferedImage),
+    ACL: "public-read",
+    ContentType: image.type,
   });
 
   (meal.instructions = xss(formData.get("instructions"))),
@@ -57,5 +72,6 @@ export async function storeMeal(prevState, formData) {
     // Save the meal to the database
     await storeMealInDb(meal);
 
+  revalidatePath("/meals", "layout");
   redirect(`/meals`);
 }
